@@ -10,14 +10,14 @@
  * 		will read in increasing order from 1 to 15 and then an empty space.
  * 
  * Facilitate the following:
- * 	-- Display the board
- * 	-- Tile movement based around the empty (or 0) tile
- * 	-- Board shuffler
- * 	-- Check for solved board
+ * 	-- Display the board                                                     [[DONE]]
+ * 	-- Tile movement based around the empty (or 0) tile                      [[DONE]]
+ * 	-- Board shuffler                                                        [[DONE]]
+ * 	-- Check for solved board                                                [[DONE]]
  * 	+++++ AFTER THE GAME WORKS +++++
- * 	-- Ability to undo one player action. Undoing this will redo the action.
- * 	-- Save function
- * 	-- Load function
+ * 	-- Ability to undo one player action. Undoing this will redo the action. [[DONE]]
+ * 	-- Save function                                                         [[TODO]]
+ * 	-- Load function                                                         [[TODO]]
  * 
  */
 
@@ -81,7 +81,7 @@ public class fifteenSquare
 			while (!isSolved() && !quitFlag)                     // During the game,
 			{
 				displayBoard();                                      // Print the board.
-				System.out.println("> ");                            // Read player input.
+				System.out.print("> ");                            // Read player input.
 				do                                                   //
 				{                                                    //
 					command = input.nextLine().toUpperCase();         // Read player input.
