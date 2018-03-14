@@ -9,6 +9,17 @@
  * 		will be such that the numbers, when read left-to-right as if text,
  * 		will read in increasing order from 1 to 15 and then an empty space.
  * 
+ * Winning board (4x4):
+ * ╔══╤══╤══╤══╗
+ * ║ 1│ 2│ 3│ 4║
+ * ╟──┼──┼──┼──╢
+ * ║ 5│ 6│ 7│ 8║
+ * ╟──┼──┼──┼──╢
+ * ║ 9│10│11│12║
+ * ╟──┼──┼──┼──╢
+ * ║13│14│15│  ║
+ * ╚══╧══╧══╧══╝
+ * 
  * Facilitate the following:
  * 	-- Display the board                                                     [[DONE]]
  * 	-- Tile movement based around the empty (or 0) tile                      [[DONE]]
@@ -24,18 +35,11 @@
 import java.util.*;
 public class fifteenSquare
 {
-	// Static variables up here because I like being able to toggle settings as desired.
-	                                                          //
-	static final int SHUFFLE_COUNT = 1000;                    // Shuffle this many times.
-	static final int BOARD_SIZE = 4;                          // What's the side length of the square?
-	static int[][] board = new int[BOARD_SIZE][BOARD_SIZE];   // Where do the pieces go?
-	                                                          
-	static final char[] INPUTS = new char[] {           // The command set
-			'U', 'L', 'D', 'R', 'S', 'G', 'Q', 'Z', 'H'   //
-	};                                                  // Starts with ULDR for shuffler purposes
+	// Static variables up here because I like being able to toggle settings as desired
+	//  or avoid passing a million variables as arguments
 	                                                          
 	static final char CORNER_UL = '\u2554';     // Tiles!
-	static final char CORNER_UR = '\u2557';
+	static final char CORNER_UR = '\u2557';     
 	static final char CORNER_LL = '\u255A';
 	static final char CORNER_LR = '\u255D';
 	
@@ -44,18 +48,27 @@ public class fifteenSquare
 	static final char VERT_DOUBLE = '\u2551';
 	static final char VERT_SINGLE = '\u2502';
 	
-	static final char U_THREE = '\u2564';     // These are the double borders
-	static final char L_THREE = '\u255F';     //   intersecting singles.
-	static final char R_THREE = '\u2562';
-	static final char D_THREE = '\u2567';
+	static final char U_THREE = '\u2564';       // These are the double borders
+	static final char L_THREE = '\u255F';       //   intersecting singles.
+	static final char R_THREE = '\u2562';       //
+	static final char D_THREE = '\u2567';       //
 	
 	static final char CROSS = '\u253C';
+   
+	static final int SHUFFLE_COUNT = 100000;                 // Shuffle this many times.
+	static final int BOARD_SIZE = 4;                          // What's the side length of the square?
+	static int[][] board = new int[BOARD_SIZE][BOARD_SIZE];   // Where do the pieces go?
+   
+	static final char[] INPUTS = new char[] {                 // The command set
+		'U', 'L', 'D', 'R', 'S', 'G', 'Q', 'Z', 'H'            //
+	};                                                        // Starts with ULDR for shuffler purposes
 	
 	static char previousDirection;            // Used for undoing moves. Static because
 	                                          //  I don't want to pass it as an argument.
 	static boolean quitFlag;
 	static boolean isShuffling = false;       // Added this variable to make the command reader less angry.
 	static int temp;                          // facilitates the swapping!
+	
 	public static void main(String[] args)
 	{
 		String command;                           // facilitates the inputs!
@@ -81,7 +94,7 @@ public class fifteenSquare
 			while (!isSolved() && !quitFlag)                     // During the game,
 			{
 				displayBoard();                                      // Print the board.
-				System.out.print("> ");                            // Read player input.
+				System.out.print("> ");                              // Read player input.
 				do                                                   //
 				{                                                    //
 					command = input.nextLine().toUpperCase();         // Read player input.
@@ -190,9 +203,8 @@ public class fifteenSquare
 		switch (ch)
 		{
 		case 'U': // Valid state: not at top of board
-         if (findBlank() / BOARD_SIZE != 0)
-         {
-         // Swap the appropriate positions.
+         if (zeroPos / BOARD_SIZE != 0)
+         {  // Swap the blank space with the tile above it.
          	temp = board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE];
          	board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE] = board[(zeroPos / BOARD_SIZE) - 1][zeroPos % BOARD_SIZE];
          	board[(zeroPos / BOARD_SIZE) - 1][zeroPos % BOARD_SIZE] = temp;
@@ -204,13 +216,13 @@ public class fifteenSquare
          }
          else if (!isShuffling)    // Scold if wrong and player input.
          {
-         	System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
+         	System.out.println("\'" + ch + "\' is illegal.");
+         	System.out.println("Press H for help.");
          }
 			break;
 		case 'D': // Valid state: not at bottom of board
-			if (findBlank() / BOARD_SIZE != BOARD_SIZE - 1)
-         {
-			// Swap the appropriate positions.
+			if (zeroPos / BOARD_SIZE != BOARD_SIZE - 1)
+         {  // Swap the blank space with the tile below it.
          	temp = board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE];
          	board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE] = board[(zeroPos / BOARD_SIZE) + 1][zeroPos % BOARD_SIZE];
          	board[(zeroPos / BOARD_SIZE) + 1][zeroPos % BOARD_SIZE] = temp;
@@ -221,13 +233,13 @@ public class fifteenSquare
          }
          else if (!isShuffling)
          {
-         	System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
+         	System.out.println("\'" + ch + "\' is illegal.");
+         	System.out.println("Press H for help.");
          }
 			break;
 		case 'L': // Valid state: not at left of board
-			if (findBlank() % BOARD_SIZE != 0)
-         {
-			// Swap the appropriate positions.
+			if (zeroPos % BOARD_SIZE != 0)
+         {  // Swap the blank space with the tile to the left of it.
          	temp = board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE];
          	board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE] = board[zeroPos / BOARD_SIZE][(zeroPos % BOARD_SIZE) - 1];
          	board[zeroPos / BOARD_SIZE][(zeroPos % BOARD_SIZE) - 1] = temp;
@@ -238,13 +250,13 @@ public class fifteenSquare
          }
          else if (!isShuffling)
          {
-         	System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
+         	System.out.println("\'" + ch + "\' is illegal.");
+         	System.out.println("Press H for help.");
          }
 			break;
 		case 'R': // Valid state: not at right of board
-			if (findBlank() % BOARD_SIZE != BOARD_SIZE - 1)
-         {
-			// Swap the appropriate positions.
+			if (zeroPos % BOARD_SIZE != BOARD_SIZE - 1)
+         {  // Swap the blank space with the tile to the right of it.
          	temp = board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE];
          	board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE] = board[zeroPos / BOARD_SIZE][(zeroPos % BOARD_SIZE) + 1];
          	board[zeroPos / BOARD_SIZE][(zeroPos % BOARD_SIZE) + 1] = temp;
@@ -255,7 +267,8 @@ public class fifteenSquare
          }
          else if (!isShuffling)
          {
-         	System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
+         	System.out.println("\'" + ch + "\' is illegal.");
+         	System.out.println("Press H for help.");
          }
 			break;
 		case 'S':
@@ -267,11 +280,11 @@ public class fifteenSquare
 			// TODO implement
 			break;
 		case 'Q':
-			quitFlag = true; // Player quits.
+			quitFlag = true;            // Player quits.
 			break;
 		case 'Z':
-			switch (previousDirection)  // move backwards. Otherwise, tell player they can't undo.
-			{
+			switch (previousDirection)  // Move backwards. If it's the first move, tell the player that they can't undo.
+			{                           // Undoing again will redo the move.
 			case 'U':
 				executeCommand('D');
 				break;
@@ -285,17 +298,19 @@ public class fifteenSquare
 				executeCommand('L');
 				break;
 			default:              // if 0
-				System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
+				System.out.println("\'" + ch + "\' is illegal.");
+         	System.out.println("Press H for help.");
 				break;
 			}
 			break;
 		case 'H':
-			System.out.println("Commands:");
 			System.out.println("----------------------");
+			System.out.println("Commands:");
 			System.out.println("U,D,L,R: Move the blank space up, down, left, or right.");
 			System.out.println("S:       Save the game state.");
 			System.out.println("G:       Get (load) the game state.");
 			System.out.println("Z:       Undo your last move. Execute again to redo.");
+			System.out.println("            (doesn't work if it's your first move)");
 			System.out.println("H:       Get a list of commands. The H is for \"Hello\"!");
 			System.out.println("----------------------");
 			break;
@@ -309,7 +324,9 @@ public class fifteenSquare
 	/*
 	 * Because of how I arranged U L D R in INPUTS[],
 	 * (indexOf(L) + 2) % 4 = indexOf(R) and likewise for U and L.
-	 * In other words, I can use that to check for non-undo inputs.
+	 * In other words, I can use that to check for non-undo inputs
+	 *    by having all corresponding values be a set number of
+	 *    indices away from each other.
 	 */
 	{
 		isShuffling = true;
@@ -317,18 +334,18 @@ public class fifteenSquare
 		Random randy = new Random();  // Good ol' Randy's lending a hand!
 		int rand;
 		for (int i = 0; i < SHUFFLE_COUNT; i++)            // SHUFFLE_COUNT times,
-		{                                                      //
-			temp = 0;                                           // Allow the check at the bottom
-			do                                                  //
-			{                                                   //
-				rand = Math.abs(randy.nextInt()) % 4;            // Get a cup of sugar from Randy! Thanks, Randy!
-				                                                 //   (Repeat without incrementing if
-				                                                 //   effectively undoing previous
-			} while (previousDirection == INPUTS[(rand + 2) % 4]); //   action)
-			executeCommand(INPUTS[rand]);                       // Execute Randy's "sugar". Rude!
-			
-			if (temp != -1) i--;                            // If nothing happened,
-			                                                //  Repeat without incrementing.
+		{                                                          //
+			temp = 0;                                               // Allow the check at the bottom
+			do                                                      //
+			{                                                       //
+				rand = Math.abs(randy.nextInt()) % 4;                // Get a cup of sugar from Randy! Thanks, Randy!
+				                                                     //   (Repeat without incrementing if
+				                                                     //   effectively undoing previous
+			} while (previousDirection == INPUTS[(rand + 2) % 4]);  //   action)
+			executeCommand(INPUTS[rand]);                           // Execute Randy's "sugar". Rude!
+			                                                        //
+			if (temp != -1) i--;                                    // If nothing happened,
+			                                                        //  Repeat without incrementing.
 		}
 		
 		isShuffling = false;
@@ -336,11 +353,13 @@ public class fifteenSquare
 	
 	static boolean isSolved()
 	{
-		for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)        // Check the board configuration
+		for (int i = 0; i < BOARD_SIZE * BOARD_SIZE - 1; i++)    // Check the board configuration
 		{                                                        //  to match the ideal setting
 			if (board[i / BOARD_SIZE][i % BOARD_SIZE] != (i + 1)) //
 				return false;                                      //
 		}                                                        //  as described in the header comments
+		if (board[BOARD_SIZE - 1][BOARD_SIZE - 1] != 0)          //
+			return false;                                         //
 		
 		return true;
 	}
