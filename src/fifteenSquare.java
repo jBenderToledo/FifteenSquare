@@ -38,22 +38,22 @@ public class fifteenSquare
 	// Static variables up here because I like being able to toggle settings as desired
 	//  or avoid passing a million variables as arguments
 	                                                          
-	static final char CORNER_UL = '\u2554';     // Tiles!
-	static final char CORNER_UR = '\u2557';     
-	static final char CORNER_LL = '\u255A';
-	static final char CORNER_LR = '\u255D';
+	static final char CORNER_UL = '╔';     // Tiles!
+	static final char CORNER_UR = '╗';     
+	static final char CORNER_LL = '╚';
+	static final char CORNER_LR = '╝';
 	
-	static final char HORI_DOUBLE = '\u2550';
-	static final char HORI_SINGLE = '\u2500';
-	static final char VERT_DOUBLE = '\u2551';
-	static final char VERT_SINGLE = '\u2502';
+	static final char HORI_DOUBLE = '═';
+	static final char HORI_SINGLE = '─';
+	static final char VERT_DOUBLE = '║';
+	static final char VERT_SINGLE = '│';
 	
-	static final char U_THREE = '\u2564';       // These are the double borders
-	static final char L_THREE = '\u255F';       //   intersecting singles.
-	static final char R_THREE = '\u2562';       //
-	static final char D_THREE = '\u2567';       //
+	static final char U_THREE = '╤';       // These are the double borders
+	static final char L_THREE = '╟';       //   intersecting singles.
+	static final char R_THREE = '╢';       //
+	static final char D_THREE = '╧';       //
 	
-	static final char CROSS = '\u253C';
+	static final char CROSS = '┼';
    
 	static final int SHUFFLE_COUNT = 100000;                 // Shuffle this many times.
 	static final int BOARD_SIZE = 4;                          // What's the side length of the square?
@@ -315,7 +315,8 @@ public class fifteenSquare
 			System.out.println("----------------------");
 			break;
 		default:   // DNE
-			System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
+			System.out.println("\'" + ch + "\' is illegal.");
+      	System.out.println("Press H for help.");
 			break;
 		}
 	}
@@ -329,9 +330,9 @@ public class fifteenSquare
 	 *    indices away from each other.
 	 */
 	{
-		isShuffling = true;
+		isShuffling = true;                       // Flag for preventing scolding on
 		
-		Random randy = new Random();  // Good ol' Randy's lending a hand!
+		Random randy = new Random();                 // Good ol' Randy's lending a hand!
 		int rand;
 		for (int i = 0; i < SHUFFLE_COUNT; i++)            // SHUFFLE_COUNT times,
 		{                                                          //
@@ -348,7 +349,7 @@ public class fifteenSquare
 			                                                        //  Repeat without incrementing.
 		}
 		
-		isShuffling = false;
+		isShuffling = false;                       // Flag off
 	}
 	
 	static boolean isSolved()
