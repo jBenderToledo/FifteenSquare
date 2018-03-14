@@ -40,7 +40,7 @@ public class fifteenSquare
 	static final char CORNER_LR = '\u255D';
 	
 	static final char HORI_DOUBLE = '\u2550';
-	static final char HORI_SINGLE = '\u2501';
+	static final char HORI_SINGLE = '\u2500';
 	static final char VERT_DOUBLE = '\u2551';
 	static final char VERT_SINGLE = '\u2502';
 	
@@ -49,18 +49,17 @@ public class fifteenSquare
 	static final char R_THREE = '\u2562';
 	static final char D_THREE = '\u2567';
 	
-	static final char CROSS = '\u254B';
+	static final char CROSS = '\u253C';
 	
 	static char previousDirection;            // Used for undoing moves. Static because
 	                                          //  I don't want to pass it as an argument.
 	static boolean quitFlag;
+	static boolean isShuffling = false;       // Added this variable to make the command reader less angry.
 	static int temp;                          // facilitates the swapping!
 	public static void main(String[] args)
 	{
 		String command;                           // facilitates the inputs!
-		
 		Scanner input = new Scanner(System.in);
-		// TODO more variables
 		
 		while (!quitFlag)
 		{
@@ -151,7 +150,7 @@ public class fifteenSquare
 					if (col != BOARD_SIZE - 1)                            //
 						System.out.print(CROSS);                           //
 				}                                                        //
-				System.out.println(R_THREE);                               //
+				System.out.println(R_THREE);                             //
 			}                                                           //
 		}
 		
@@ -203,7 +202,7 @@ public class fifteenSquare
          	
          	previousDirection = ch;
          }
-         else
+         else if (!isShuffling)    // Scold if wrong and player input.
          {
          	System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
          }
@@ -220,7 +219,7 @@ public class fifteenSquare
          	
          	previousDirection = ch;
          }
-         else
+         else if (!isShuffling)
          {
          	System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
          }
@@ -237,7 +236,7 @@ public class fifteenSquare
          	
          	previousDirection = ch;
          }
-         else
+         else if (!isShuffling)
          {
          	System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
          }
@@ -254,7 +253,7 @@ public class fifteenSquare
          	
          	previousDirection = ch;
          }
-         else
+         else if (!isShuffling)
          {
          	System.out.println("\'" + ch + "\' is illegal in this board state. Press H for help.");
          }
@@ -313,6 +312,8 @@ public class fifteenSquare
 	 * In other words, I can use that to check for non-undo inputs.
 	 */
 	{
+		isShuffling = true;
+		
 		Random randy = new Random();  // Good ol' Randy's lending a hand!
 		int rand;
 		for (int i = 0; i < SHUFFLE_COUNT; i++)            // SHUFFLE_COUNT times,
@@ -329,6 +330,8 @@ public class fifteenSquare
 			if (temp != -1) i--;                            // If nothing happened,
 			                                                //  Repeat without incrementing.
 		}
+		
+		isShuffling = false;
 	}
 	
 	static boolean isSolved()
