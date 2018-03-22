@@ -29,7 +29,12 @@
  * 	-- Ability to undo one player action. Undoing this will redo the action. [[DONE]]
  * 	-- Save function                                                         [[TODO]]
  * 	-- Load function                                                         [[TODO]]
- * 
+ *
+ **************************************************************************************
+ *
+ *	Getting and loading is facilitated by looking for a text file named "4x4save.txt"
+ *    and reading/writing using it. 4 will be replaced with whatever BOARD_SIZE happens
+ *    to be.
  */
 
 import java.util.*;
@@ -302,6 +307,7 @@ public class fifteenSquare
          	System.out.println("Press H for help.");
 				break;
 			}
+			previousDirection = 0;      // This disallows the user from undoing the undo.
 			break;
 		case 'H':
 			System.out.println("----------------------");
