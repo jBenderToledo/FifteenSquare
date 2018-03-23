@@ -60,32 +60,41 @@ public class fifteenSquare
 	
 	static final char CROSS = '┼';
    
-	static final int SHUFFLE_COUNT = 100000;                 // Shuffle this many times.
+	static final int SHUFFLE_COUNT = 1000000;                  // Shuffle this many times.
 	static final int BOARD_SIZE = 4;                          // What's the side length of the square?
 	static int[][] board = new int[BOARD_SIZE][BOARD_SIZE];   // Where do the pieces go?
    
-	static final char[] INPUTS = new char[] {                 // The command set
-		'U', 'L', 'D', 'R', 'S', 'G', 'Q', 'Z', 'H'            //
+	static final char[] MOVES = new char[] {                  // The command set
+		'U', 'L', 'D', 'R'                                     //
 	};                                                        // Starts with ULDR for shuffler purposes
 	
 	static char previousDirection;            // Used for undoing moves. Static because
 	                                          //  I don't want to pass it as an argument.
-	static boolean quitFlag;
+	static boolean quitFlag;                  // Allows quitting the game.
+	static boolean exitFlag;                  // Closes the game when outside of the game.
 	static boolean isShuffling = false;       // Added this variable to make the command reader less angry.
 	static int temp;                          // facilitates the swapping!
+	
+	static int gamesWon;
+	static int gamesPlayed;
+	
+	static String saveName = String.format("%dx%dBoard.txt", BOARD_SIZE, BOARD_SIZE);
 	
 	public static void main(String[] args)
 	{
 		String command;                           // facilitates the inputs!
 		Scanner input = new Scanner(System.in);
+		gamesWon = 0;
+		gamesPlayed = 0;
 		
 		while (!quitFlag)
 		{
 			previousDirection = 0;                            // 0 means you can't undo
+			gamesPlayed++;
 			
 			for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)    // Initialize the board with values 0->15.
 			{                                                    //
-				board[i / BOARD_SIZE][i % BOARD_SIZE] = i;        // divide for row, mod for row element
+				board[row(i)][col(i)] = i;        // divide for row, mod for row element
 			}                                                    //
 			                                                     //
 			temp = board[0][0];                                  // This is an unsolveable configuration.
@@ -93,18 +102,16 @@ public class fifteenSquare
 			board[BOARD_SIZE - 1][BOARD_SIZE - 1] = temp;        //  upper-left and lower-right tiles.
 			
 			shuffle();                                       // Unsolve the board
-			                                                 //
-			previousDirection = 0;                           // Don't undo shufflebot.
 			
-			while (!isSolved() && !quitFlag)                     // During the game,
+			while (!quitFlag && !isSolved())                     // During the game,
 			{
 				displayBoard();                                      // Print the board.
-				System.out.print("> ");                              // Read player input.
+				System.out.print("> ");                              // Prompt player input.
 				do                                                   //
 				{                                                    //
-					command = input.nextLine().toUpperCase();         // Read player input.
+					command = input.nextLine();                       // Read player input.
 				} while (command.length() == 0);                     // Buffer any leaking newlines.
-				executeCommand(command.charAt(0));                   // Perform command.
+				executeCommand(command.toUpperCase().charAt(0));     // Perform command.
 			}
 			
 			if (quitFlag)
@@ -114,9 +121,17 @@ public class fifteenSquare
 			else // if isSolved()
 			{
 				displayBoard();
-				System.out.println("Congratulations! Let's go again!");
-			}
-		}
+				System.out.println("You win!");
+				System.out.println("Play again?");
+				command = null;
+				do
+				{
+					command = input.nextLine();
+				} while (command.length() == 0);
+				
+				if (command.toUpperCase().charAt(0) == 'N') quitFlag = true;
+			} // Closes the current game
+		} // Closes the game state
 		input.close();
 	}
 	
@@ -184,6 +199,16 @@ public class fifteenSquare
 		System.out.println(CORNER_LR);
 	}
 	
+	static int row(int n)
+	{
+		return n / BOARD_SIZE;
+	}
+	
+	static int col(int n)
+	{
+		return n % BOARD_SIZE;
+	}
+	
 	static int findBlank()
 	{
 		for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)  // return the position
@@ -199,38 +224,54 @@ public class fifteenSquare
 	
 	static void executeCommand(char ch) // TODO implement saving / loading
 	/*
-	 * If ch is U, D, L, R, and will not crash:
+	 * If ch is U, D, L, R, and will not crash by following that direction:
 	 * 	swap the zero spot with the spot in the appropriate position relative to it.
-	 * if
+	 * Else if will crash:
+	 * 	if the player is doing the move,
+	 * 		Scold the player.
+	 * 	if the game is shuffling,
+	 *			Don't scold the player.
+	 * If ch is H,
+	 * 	Print the help prompt.
+	 * If ch is Q,
+	 * 	Enable quitting.
+	 * if ch is Z,
+	 * 	if previousMove is not 0,
+	 * 		Move in the previous direction and set previousMove to 0.
+	 * if ch is S,
+	 * 	Make the game state into an array of strings.
+	 * 	Convert it into a string, delimiting with newlines.
+	 * 	BOARD_SIZE * BOARD_SIZE numbers followed by values that the player can
+	 * 		accumulate over time.
 	 */
 	{
 		int zeroPos = findBlank();         // Where on the board is the empty space?
 		switch (ch)
 		{
-		case 'U': // Valid state: not at top of board
-         if (zeroPos / BOARD_SIZE != 0)
+		case 'U':                          // Valid state: not at top of board
+         if (row(zeroPos) != 0)
          {  // Swap the blank space with the tile above it.
-         	temp = board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE];
-         	board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE] = board[(zeroPos / BOARD_SIZE) - 1][zeroPos % BOARD_SIZE];
-         	board[(zeroPos / BOARD_SIZE) - 1][zeroPos % BOARD_SIZE] = temp;
+         	temp = board[row(zeroPos)][col(zeroPos)];
+         	board[row(zeroPos)][col(zeroPos)] = board[row(zeroPos) - 1][col(zeroPos)];
+         	board[row(zeroPos) - 1][col(zeroPos)] = temp;
          	
-         	temp = -1;    // This means that the board state was moved.
-         	              //  this is relevant to the shuffle() method.
+         	temp = -1;              // This means that the board state was moved.
+         	                        //  this is relevant to the shuffle() method.
          	
          	previousDirection = ch;
          }
-         else if (!isShuffling)    // Scold if wrong and player input.
+         else if (!isShuffling)     // Scold if wrong and player input.
          {
          	System.out.println("\'" + ch + "\' is illegal.");
          	System.out.println("Press H for help.");
          }
 			break;
-		case 'D': // Valid state: not at bottom of board
-			if (zeroPos / BOARD_SIZE != BOARD_SIZE - 1)
+		case 'D':                          // Valid state: not at bottom of board
+			if (row(zeroPos) != BOARD_SIZE - 1)
          {  // Swap the blank space with the tile below it.
-         	temp = board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE];
-         	board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE] = board[(zeroPos / BOARD_SIZE) + 1][zeroPos % BOARD_SIZE];
-         	board[(zeroPos / BOARD_SIZE) + 1][zeroPos % BOARD_SIZE] = temp;
+         	temp = board[row(zeroPos)][col(zeroPos)];
+         	board[row(zeroPos)][col(zeroPos)] = board[row(zeroPos) + 1][col(zeroPos)];
+         	board[row(zeroPos) + 1][col(zeroPos)] = temp;
          	
          	temp = -1;
          	
@@ -242,12 +283,12 @@ public class fifteenSquare
          	System.out.println("Press H for help.");
          }
 			break;
-		case 'L': // Valid state: not at left of board
-			if (zeroPos % BOARD_SIZE != 0)
+		case 'L':                          // Valid state: not at left of board
+			if (col(zeroPos) != 0)
          {  // Swap the blank space with the tile to the left of it.
-         	temp = board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE];
-         	board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE] = board[zeroPos / BOARD_SIZE][(zeroPos % BOARD_SIZE) - 1];
-         	board[zeroPos / BOARD_SIZE][(zeroPos % BOARD_SIZE) - 1] = temp;
+         	temp = board[row(zeroPos)][col(zeroPos)];
+         	board[row(zeroPos)][col(zeroPos)] = board[row(zeroPos)][col(zeroPos) - 1];
+         	board[row(zeroPos)][col(zeroPos) - 1] = temp;
          	
          	temp = -1;
          	
@@ -259,12 +300,12 @@ public class fifteenSquare
          	System.out.println("Press H for help.");
          }
 			break;
-		case 'R': // Valid state: not at right of board
-			if (zeroPos % BOARD_SIZE != BOARD_SIZE - 1)
+		case 'R':                          // Valid state: not at right of board
+			if (col(zeroPos) != BOARD_SIZE - 1)
          {  // Swap the blank space with the tile to the right of it.
-         	temp = board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE];
-         	board[zeroPos / BOARD_SIZE][zeroPos % BOARD_SIZE] = board[zeroPos / BOARD_SIZE][(zeroPos % BOARD_SIZE) + 1];
-         	board[zeroPos / BOARD_SIZE][(zeroPos % BOARD_SIZE) + 1] = temp;
+         	temp = board[row(zeroPos)][col(zeroPos)];
+         	board[row(zeroPos)][col(zeroPos)] = board[row(zeroPos)][col(zeroPos) + 1];
+         	board[row(zeroPos)][col(zeroPos) + 1] = temp;
          	
          	temp = -1;
          	
@@ -315,7 +356,7 @@ public class fifteenSquare
 			System.out.println("U,D,L,R: Move the blank space up, down, left, or right.");
 			System.out.println("S:       Save the game state.");
 			System.out.println("G:       Get (load) the game state.");
-			System.out.println("Z:       Undo your last move. Execute again to redo.");
+			System.out.println("Z:       Undo your last move.");
 			System.out.println("            (doesn't work if it's your first move)");
 			System.out.println("H:       Get a list of commands. The H is for \"Hello\"!");
 			System.out.println("----------------------");
@@ -329,11 +370,18 @@ public class fifteenSquare
 	
 	static void shuffle()
 	/*
-	 * Because of how I arranged U L D R in INPUTS[],
-	 * (indexOf(L) + 2) % 4 = indexOf(R) and likewise for U and L.
+	 * Because of how I arranged U L D R in MOVES[],
+	 * (indexOf(L) + 2) % 4 = indexOf(R), likewise for U and L, vice versa applies.
 	 * In other words, I can use that to check for non-undo inputs
 	 *    by having all corresponding values be a set number of
 	 *    indices away from each other.
+	 *    
+	 * So, the basic idea is:
+	 * 1. Tell the system that I'm shuffling and therefore to not nag me.
+	 * 2. Get a correct move SHUFFLE_COUNT times using Random randy;
+	 * 	Do so until randy gives us a move that won't undo the previous move.
+	 * 3. Execute the move, given that it's a move that won't crash the game.
+	 * 4. If it was a move that would crash a game, restart the loop.
 	 */
 	{
 		isShuffling = true;                       // Flag for preventing scolding on
@@ -343,19 +391,21 @@ public class fifteenSquare
 		for (int i = 0; i < SHUFFLE_COUNT; i++)            // SHUFFLE_COUNT times,
 		{                                                          //
 			temp = 0;                                               // Allow the check at the bottom
+			                                                        //
 			do                                                      //
 			{                                                       //
 				rand = Math.abs(randy.nextInt()) % 4;                // Get a cup of sugar from Randy! Thanks, Randy!
 				                                                     //   (Repeat without incrementing if
 				                                                     //   effectively undoing previous
-			} while (previousDirection == INPUTS[(rand + 2) % 4]);  //   action)
-			executeCommand(INPUTS[rand]);                           // Execute Randy's "sugar". Rude!
+			} while (previousDirection == MOVES[(rand + 2) % 4]);   //   action)
+			executeCommand(MOVES[rand]);                            // Execute Randy's "sugar". Rude!
 			                                                        //
 			if (temp != -1) i--;                                    // If nothing happened,
 			                                                        //  Repeat without incrementing.
 		}
 		
 		isShuffling = false;                       // Flag off
+		previousDirection = 0;                     // Disallow undoing a shuffle move
 	}
 	
 	static boolean isSolved()
@@ -365,9 +415,37 @@ public class fifteenSquare
 			if (board[i / BOARD_SIZE][i % BOARD_SIZE] != (i + 1)) //
 				return false;                                      //
 		}                                                        //  as described in the header comments
-		if (board[BOARD_SIZE - 1][BOARD_SIZE - 1] != 0)          //
-			return false;                                         //
+		// I don't need to check for 0 because I've already checked for the other places.
 		
 		return true;
+	}
+	
+	static void saveGame()
+	{
+		String[] saveData = new String[BOARD_SIZE * BOARD_SIZE + 2];
+		for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)
+		{
+			saveData[i] = board[row(i)][col(i)] + "";                 // Casts the elements as Strings
+		}
+		saveData[saveData.length - 2] = gamesPlayed + "";
+		saveData[saveData.length - 1] = gamesWon + "";
+		
+		try
+		/*
+		 * Read the file. If it doesn't exist yet, make the file.
+		 * Finally, erase the file, write to the file, then close the file.
+		 */
+		{
+			java.io.File saveFile = new java.io.File(saveName);          // 4x4Board.txt
+		}
+		catch (IOException ex)
+		{
+			
+		}
+	}
+	
+	static void loadGame()
+	{
+		
 	}
 }
