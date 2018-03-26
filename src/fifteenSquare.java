@@ -27,8 +27,8 @@
  * 	-- Check for solved board                                                [[DONE]]
  * 	+++++ AFTER THE GAME WORKS +++++
  * 	-- Ability to undo one player action. Undoing this will redo the action. [[DONE]]
- * 	-- Save function                                                         [[TODO]]
- * 	-- Load function                                                         [[TODO]]
+ * 	-- Save function                                                         [[DONE]]
+ * 	-- Load function                                                         [[DONE]]
  *
  **************************************************************************************
  *
@@ -38,7 +38,7 @@
  */
 
 import java.util.*;
-import java.io.File;
+import java.io.*;
 public class fifteenSquare
 {
 	// Static variables up here because I like being able to toggle settings as desired
@@ -80,18 +80,18 @@ public class fifteenSquare
 		int gamesPlayed = 0;                               // How many games did the player play?
 		int movesMade = 0;                                 // How many moves did the player make?
 		int oldZeroPos;                                    // Where was the zero position before?
-		                                                   //////////////////////////
-		int[][] board = new int[BOARD_SIZE][BOARD_SIZE];                           // Where do the pieces go?
+		                                                   //
+		int[][] board = new int[BOARD_SIZE][BOARD_SIZE];   // Where do the pieces go?
 		
 		do
 		{
 			previousDirection = 0;                            // 0 means you can't undo
 			gamesPlayed++;
 			
-			for (int i = 0; i < BOARD_SIZE * BOARD_SIZE; i++)    // Initialize the board with values 0->15.
-			{                                                    //
-				board[row(i)][col(i)] = i;        // divide for row, mod for row element
-			}                                                    //
+			for (int index = 0; index < BOARD_SIZE * BOARD_SIZE; index++) // Initialize the board with values 0->15.
+			{                                                             //
+				board[row(index)][col(index)] = index;                     // 
+			}                                                    ///////////
 			                                                     //
 			temp = board[0][0];                                  // This is an unsolveable configuration.
 			board[0][0] = board[BOARD_SIZE - 1][BOARD_SIZE - 1]; //  Remedy the issue by swapping the
@@ -105,58 +105,72 @@ public class fifteenSquare
 				displayBoard(board);                                 // Print the board.
 				System.out.print("> ");                              // Prompt player input.
 				                                                     //
-				command = null;                                      //
+				command = null;                                      // Empty the input String.
 				do                                                   //
 				{                                                    //
 					command = input.nextLine();                       // Read player input.
 				} while (command != null && command.length() == 0);  // Buffer any leaking newlines to prevent crashing.
-				command = command.toUpperCase();                     // Makes subsequent code less ugly
+				command = command.toUpperCase();                     // Convert to uppercase to make subsequent code less ugly.
 				                                                     //
 				previousDirection = executeCommand(board,            // Store the previous valid direction from passing the board,
 						command.charAt(0),                             //  passing a command,
 						previousDirection,                             //  passing the previous direction,
 						false);                                        //  and verifying the lack of shuffling.
 				
-				if (isADirectionInput(command.charAt(0))
+				if (isADirectionInput(command.charAt(0))               //
 						&& board[row(oldZeroPos)][col(oldZeroPos)] != 0) // If I perform a move that changes the board state directly,
 				{                                                      //  then I should increment the number of moves made.
 					movesMade++;                                        //
 				}                                                      //
 				else if (command.charAt(0) == 'Z'                      //
-						&& board[row(oldZeroPos)][col(oldZeroPos)] != 0) // If I undo a move, then the number of moves made should go down.
-				{
-					movesMade--;
+						&& board[row(oldZeroPos)][col(oldZeroPos)] != 0) // If I undo a move, then the number
+				{                                                      //  of moves made should go down.
+					movesMade--;                                        //
+				}                                                      //
+				else if (command.charAt(0) == 'S')                     //// SAVING:
+				{                                                        //
+					try                                                   // 
+					{                                                     //
+						saveGame(board, gamesWon, gamesPlayed, movesMade); // Pass all relevant variables to save.
+						System.out.println("Done!");                       // Confirm that nothing went wrong.
+					}                                                     //
+					catch (IOException ex)                                // Forced exception catch.
+					{                                                     //
+						System.out.println(ex);                            // No idea what went wrong. Pass to user.
+					}                                                     //
+				}                                                        //
+				else if (command.charAt(0) == 'G')                       ////////////// LOADING:
+				{                                                                    //
+					String[] saveData = loadGame();                                   // Get all relevant variables.
+					if (saveData[0].equals("FAILED"))                                 //  If you can't,
+					{                                                                    //
+						System.out.println("No save file exists. Try saving your game."); // then it probably doesn't exist.
+					}                                                                    //
+					else                                                              // If successful load,
+					{                                                                 ////////////
+						for (int itemNo = 0; itemNo < saveData.length - 3; itemNo++)             // Set the board.
+						{                                                                        //
+							board[row(itemNo)][col(itemNo)] = Integer.parseInt(saveData[itemNo]); //
+						}                                                                        //
+						                                                                         //
+						gamesWon =    Integer.parseInt(saveData[saveData.length - 3]);           // Restore all metadata.
+						gamesPlayed = Integer.parseInt(saveData[saveData.length - 2]);           //
+						movesMade =   Integer.parseInt(saveData[saveData.length - 1]);           //
+					}                                                                 ////////////
+					                                                                  //
+					previousDirection = 0;                                            // Prevent undoing after loading.
 				}
-				else if (command.charAt(0) == 'S')
+				else if (command.charAt(0) == 'M')                                   // Print player stats.
 				{
-					saveGame(board, gamesWon, gamesPlayed, movesMade); // Pass all relevant variables to save.
-					System.out.println("Done!");                       // Confirm that nothing went wrong.
-				}
-				else if (command.charAt(0) == 'G')
-				{
-					String[] saveData = loadGame(); // Enact all relevant variables.
-					if (saveData[0] == "FAILED")
-					{
-						System.out.println("No save file exists. Try saving your game.");
-					}
-					else
-					{
-						for (int i = 0; i < saveData.length - 3; i++)
-						{
-							board[row(i)][col(i)] = Integer.parseInt(saveData[i]);
-						}
-						
-						gamesWon =    Integer.parseInt(saveData[saveData.length - 3]);
-						gamesPlayed = Integer.parseInt(saveData[saveData.length - 2]);
-						movesMade =   Integer.parseInt(saveData[saveData.length - 1]);
-					}
-					
-					previousDirection = 0;
-				} // Ending extraneous command tree
+					System.out.println("STATS:");
+					System.out.printf("Games won:\t%d\n", gamesWon);
+					System.out.printf("Games played:\t%d\n", gamesPlayed);
+					System.out.printf("Moves made:\t%d\n", movesMade);
+				} // Ending main-relevant command tree
 				
-			} 
+			} // Ending the current game state
 			
-			if (previousDirection != 'Q') // Check if the game is solved retroactively without going through the check twice.
+			if (previousDirection != 'Q') // Increment gamesWon and congratulate the player if it wasn't a game exit.
 			{
 				gamesWon++;
 				displayBoard(board);
@@ -264,7 +278,7 @@ public class fifteenSquare
 		return -1;                                  //
 	}
 	
-	static char executeCommand(int[][] board, char command, char previous, boolean isShuffling) // TODO implement saving / loading
+	static char executeCommand(int[][] board, char command, char previous, boolean isShuffling)
 	/*
 	 * This receives and passes previousDirection out.
 	 * 
@@ -283,7 +297,12 @@ public class fifteenSquare
 	 * if command is Z,
 	 * 	if previousMove is not 0,
 	 * 		Move in the previous direction and set previousMove to 0.
-	 * if command
+	 * if command is M,
+	 * 	Print user's metadata after going to main.
+	 * if command is S,
+	 * 	Return to main and save data.
+	 * if command is G,
+	 * 	Return to main and load data.
 	 */
 	{
 		int zeroPos = findBlank(board);         // Where on the board is the empty space?
@@ -387,6 +406,7 @@ public class fifteenSquare
 			System.out.println("G:       Get (load) the game state.");
 			System.out.println("Z:       Undo your last move.");
 			System.out.println("            (doesn't work if it's your first move or you just did this)");
+			System.out.println("M:       Look at what you've done across your play sessions.");
 			System.out.println("H:       Get a list of commands.");
 			System.out.println("----------------------");
 			break;
@@ -395,6 +415,8 @@ public class fifteenSquare
 			break;
 		case 'G':
 			System.out.println("Loading...");
+			break;
+		case 'M': // Needs to be facilitated by main()
 			break;
 		default:   // DNE
 			System.out.println("\'" + command + "\' is illegal.");
@@ -473,31 +495,104 @@ public class fifteenSquare
 		return false;
 	}
 	
-	static void saveGame(int[][] board, int gamesWon, int gamesPlayed, int movesMade)
+	static void saveGame(int[][] board, int gamesWon, int gamesPlayed, int movesMade) throws IOException
+	/*
+	 * 1. Read board into the first BOARD_SIZE * BOARD_SIZE elements of the saving array.
+	 * 2. Read gamesWon, gamesPlayed, movesMade into the last three elements.
+	 * 3. Erase the saved file.
+	 * 4. Make a new PrintWriter with the fileName at the top of the class.
+	 * 5. Use PrintWriter to write the elements of saveData to the file.
+	 * 6. Cleanup, exit method.
+	 */
 	{
-		String[] saveData = new String[BOARD_SIZE * BOARD_SIZE + 3];
-		for (int i = 0; i < saveData.length - 3; i++)
-		{
-			saveData[i] = Integer.toString(board[row(i)][col(i)]);
-		}
-		saveData[saveData.length - 3] = Integer.toString(gamesWon);
-		saveData[saveData.length - 2] = Integer.toString(gamesPlayed);
+		String[] saveData = new String[BOARD_SIZE * BOARD_SIZE + 3];                     // 1.
+		for (int boardPos = 0; boardPos < saveData.length - 3; boardPos++)               //
+		{                                                                                //
+			saveData[boardPos] = Integer.toString(board[row(boardPos)][col(boardPos)]);   //
+		}                                                                                //
+		saveData[saveData.length - 3] = Integer.toString(gamesWon);                      // 2.
+		saveData[saveData.length - 2] = Integer.toString(gamesPlayed);      ///////////////
 		saveData[saveData.length - 1] = Integer.toString(movesMade);        // Making these into Strings to avoid subsequent misery
 		
-		// TODO Saving mechanism
+		File saveFile = new File(saveName);                                 // 3. 
+		saveFile.delete();                                                  //
+		
+		
+		PrintWriter saveWriter = new PrintWriter(saveFile);           // 4.
+		                                                              // 
+		for (int itemNo = 0; itemNo < saveData.length; itemNo++)      /////// 5.
+		{                                                                  //
+			saveWriter.print(saveData[itemNo]);                             // Print item.
+			if (itemNo + 1 != saveData.length)                              //
+			{                                                               //
+				saveWriter.print(" ");                                       // Print delimiters in between items
+			}                                                               //  but not after the final item.
+		}                                                                  //
+		                                                              ///////
+		saveWriter.close();                                           // 6.
 	}
 	
 	static String[] loadGame()
+	/*
+	 * The first BOARD_SIZE * BOARD_SIZE elements are the numbers on the board.
+	 * The last three elements are the number of games won, the number of games played, and the number of moves made.
+	 * 
+	 * 1. Load the appropriate file.
+	 * 2. Read BOARD_SIZE * BOARD_SIZE + 3 elements from the file, save as Strings.
+	 * 3. Check for each element on the board to be a legitimate element.
+	 * 4. Reader cleanup.
+	 * 5. Check the validity of the board state. Every element should be unique.
+	 * 6. Return the loaded data.
+	 * 
+	 * ex A: If savedData doesn't exist, return a single-element array {"FAILED"}.
+	 */
 	{
 		String[] loadData = new String[BOARD_SIZE * BOARD_SIZE + 3];
 		
-		// TODO Loading mechanism
+		File savedData = new File(saveName);           // 1.
 		
-		File savedData = new File(saveName);
-		
-		if (!savedData.exists())
+		try
 		{
+			Scanner fileInput = new Scanner(savedData); // 2.
+			for (int itemNo = 0; itemNo < loadData.length; itemNo++) 
+			{                                           //
+				if (fileInput.hasNext())                 //
+				{                                        //
+					loadData[itemNo] = fileInput.next();  //
+				}                                        //
+				else                                     // If there aren't an appropriate number of elements,
+				{                                        //
+					fileInput.close();                    //
+					return new String[] {"FAILED"};       //  then this is likely not a usable file.
+				}                                        //
+				                                         /////////////
+				if (itemNo < BOARD_SIZE * BOARD_SIZE                // 3. Validity checking by checking to be a possible element.
+						&& Integer.parseInt(loadData[itemNo]) >= BOARD_SIZE * BOARD_SIZE)
+				{                                                   //
+					fileInput.close();                               //
+					return new String[] {"FAILED"};                  // Return failure if it couldn't be on the board.
+				}                                                   //
+			}                                                      //
 			
+			fileInput.close();                          // 4.
 		}
+		catch (FileNotFoundException ex)                  // A:
+		{                                                 //
+			return new String[] {"FAILED"};                // this tells the calling method that the loading method failed.
+		}                                                 //
+		
+		for (int firstIndex = 0; firstIndex < loadData.length - 4; firstIndex++) // 5.
+		{                                                                        //
+			for (int secondIndex = firstIndex + 1;                                // Check every board element
+					secondIndex < loadData.length - 3;                              //  against every subsequent board element.
+					secondIndex++)                                                  //
+			{                                                                     //
+				if (loadData[firstIndex].equals(loadData[secondIndex]))            // If two are equal,
+				{                                                                  //  Your data's bad.
+					return new String[] {"FAILED"};
+				}
+			}                                                                     
+		}
+		return loadData;                               // 6.
 	}
 }
